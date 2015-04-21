@@ -56,6 +56,7 @@ namespace CommandClientVisualStudioTest
             CMDClient client = new CMDClient(null, "Bogus network name");
             
             // we need to set the private variable here
+            typeof(CMDClient).GetField("networkStream", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(client, fakeStream);
 
             client.SendCommandToServerUnthreaded(command);
             mocks.VerifyAll();
@@ -65,7 +66,18 @@ namespace CommandClientVisualStudioTest
         [TestMethod]
         public void TestUserExitCommandWithoutMocks()
         {
-            Assert.Fail("Not yet implemented");
+            IPAddress ipaddress = IPAddress.Parse("127.0.0.1");
+            Command command = new Command(CommandType.UserExit, ipaddress, null);
+            
+            MemoryStream target = new MemoryStream();
+            CMDClient client = new CMDClient(null, "Bogus network name");
+
+            typeof(CMDClient).GetField("networkStream", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(client, target);
+            client.SendCommandToServerUnthreaded(command);
+
+            String test = "\0\0\0\0	\0\0\0127.0.0.1\0\0\0\n\0";
+
+            Assert.AreEqual(test, System.Text.Encoding.Default.GetString(target.ToArray()));
         }
 
         [TestMethod]
